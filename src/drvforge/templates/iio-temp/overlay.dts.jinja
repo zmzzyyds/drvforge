@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree overlay for {{ module_name }}
+ *
+ * Generic I2C bus example. Replace &i2c0 and the slave address (0x48) with
+ * the bus and address of your board. On Raspberry Pi, for example, target
+ * &i2c1 instead.
+ *
+ * Apply at runtime (needs CONFIG_OF_CONFIGFS):
+ *
+ *   dtc -O dtb -o {{ module_name }}-overlay.dtbo -@ {{ module_name }}-overlay.dts
+ *   sudo mkdir -p /sys/kernel/config/device-tree/overlays/{{ module_name }}
+ *   sudo cp {{ module_name }}-overlay.dtbo \
+ *       /sys/kernel/config/device-tree/overlays/{{ module_name }}/dtbo
+ */
+
+/dts-v1/;
+/plugin/;
+
+&i2c0 {
+	status = "okay";
+
+	{{ module_name }}: {{ compat_board }}@48 {
+		compatible = "{{ compat }}";
+		reg = <0x48>;
+		status = "okay";
+	};
+};

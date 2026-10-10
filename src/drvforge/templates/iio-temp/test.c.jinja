@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Userspace test client for the {{ module_name }} IIO device.
+ *
+ * Scans /sys/bus/iio/devices for the device named "{{ module_name }}",
+ * reads in_temp_raw / in_temp_scale and prints the converted temperature.
+ *
+ * On hosts without real hardware the raw value comes back from whatever the
+ * bus returns (often 0 or 0xffff); the test still verifies probe/bind and
+ * sysfs plumbing. Exit code 0 = device found and read, 1 = failure.
+ */
+
+#include <dirent.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define IIO_ROOT	"/sys/bus/iio/devices"
+#define WANTED_NAME	"{{ module_name }}"
+
+static int read_text_file(const char *path, char *buf, size_t size)
+{
+	FILE *f = fopen(path, "r");
+	if (!f)
+		return -1;
+	if (!fgets(buf, (int)size, f)) {
+		fclose(f);
+		return -1;
+	}
+	fclose(f);
+	buf[strcspn(buf, "\n")] = '\0';
+	return 0;
+}
+
+int main(void)
+{
+	DIR *dir = opendir(IIO_ROOT);
+	struct dirent *de;
+	char path[512];
+	char name[64];
+	char raw_buf[64];
+	char scale_buf[64];
+	int found = 0;
+
+	if (!dir) {
+		perror("opendir " IIO_ROOT);
+		return 1;
+	}
+
+	while ((de = readdir(dir))) {
+		if (strncmp(de->d_name, "iio:device", 10) != 0)
+			continue;
+
+		snprintf(path, sizeof(path), "%s/%s/name", IIO_ROOT,
+			 de->d_name);
+		if (read_text_file(path, name, sizeof(name)) != 0)
+			continue;
+		if (strcmp(name, WANTED_NAME) != 0)
+			continue;
+
+		found = 1;
+		printf("[ok] found IIO device %s (%s)\n", de->d_name, name);
+
+		snprintf(path, sizeof(path), "%s/%s/in_temp_raw", IIO_ROOT,
+			 de->d_name);
+		if (read_text_file(path, raw_buf, sizeof(raw_buf)) != 0) {
+			perror("read in_temp_raw");
+			break;
+		}
+		snprintf(path, sizeof(path), "%s/%s/in_temp_scale", IIO_ROOT,
+			 de->d_name);
+		if (read_text_file(path, scale_buf, sizeof(scale_buf)) != 0) {
+			perror("read in_temp_scale");
+			break;
+		}
+
+		{
+			long raw = strtol(raw_buf, NULL, 10);
+			double scale = strtod(scale_buf, NULL);
+			double celsius = raw * scale;
+
+			printf("[ok] in_temp_raw  = %s\n", raw_buf);
+			printf("[ok] in_temp_scale= %s\n", scale_buf);
+			printf("[ok] temperature  = %.4f degC\n", celsius);
+		}
+		break;
+	}
+	closedir(dir);
+
+	if (!found) {
+		fprintf(stderr,
+			"no IIO device named '%s' under %s; "
+			"is the module loaded and the device instantiated?\n",
+			WANTED_NAME, IIO_ROOT);
+		return 1;
+	}
+
+	printf("PASS: {{ module_name }} IIO checks succeeded\n");
+	return 0;
+}

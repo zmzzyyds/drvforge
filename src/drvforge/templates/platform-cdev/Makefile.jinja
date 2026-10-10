@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Out-of-tree Makefile for {{ module_name }}
+#
+# Targets:
+#   make            build {{ module_name }}.ko (needs kernel headers)
+#   make load       build and insmod
+#   make unload     rmmod
+#   make test       build, load, run the userspace test client, unload
+#   make dkms-install  install permanently via DKMS
+
+MODULE_NAME := {{ module_name }}
+obj-m := $(MODULE_NAME).o
+
+# Pull in the shared UAPI header under include/.
+ccflags-y += -I$(src)/include
+
+KVER  ?= $(shell uname -r)
+KDIR  ?= /lib/modules/$(KVER)/build
+PWD   := $(shell pwd)
+CC    ?= cc
+
+.PHONY: all modules clean load unload test dkms-install
+
+all: modules
+
+modules:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
+clean:
+	$(MAKE) -C $(KDIR) M=$(PWD) clean
+	rm -f tools/test
+
+tools/test: tools/test.c include/$(MODULE_NAME).h
+	$(CC) -Wall -Wextra -O2 -Iinclude -o $@ $<
+
+load: modules
+	sudo insmod $(MODULE_NAME).ko
+	@dmesg | tail -n 5
+
+unload:
+	sudo rmmod $(MODULE_NAME)
+
+test: modules tools/test
+	@echo "==> loading $(MODULE_NAME).ko"
+	-sudo insmod $(MODULE_NAME).ko
+	@echo "==> running userspace test"
+	sudo ./tools/test ; rc=$$? ; \
+	sudo rmmod $(MODULE_NAME) ; exit $$rc
+
+dkms-install:
+	sudo dkms add . || true
+	sudo dkms install $(MODULE_NAME)/1.0.0

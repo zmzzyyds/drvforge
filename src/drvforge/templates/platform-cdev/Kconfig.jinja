@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config {{ name_upper }}
+	tristate "{{ driver_name }} character device with ioctl API"
+	depends on OF
+	help
+	  Say M (or Y) here to enable the {{ driver_name }} platform driver.
+	  It registers a character device (/dev/{{ module_name }}) with a
+	  validated ioctl interface (get info / set gain / reset) and binds to
+	  Device Tree nodes with the compatible string "{{ compat }}".
+
+	  To compile this driver as a module, choose M here: the module will
+	  be called {{ module_name }}.

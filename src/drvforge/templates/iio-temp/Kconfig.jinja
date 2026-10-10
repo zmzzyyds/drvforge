@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config {{ name_upper }}
+	tristate "{{ driver_name }} I2C temperature sensor (IIO)"
+	depends on I2C
+	depends on IIO
+	select REGMAP_I2C
+	help
+	  Say M (or Y) here to enable the IIO driver for the
+	  {{ driver_name }} I2C temperature sensor, which binds to the
+	  compatible string "{{ compat }}".
+
+	  To compile this driver as a module, choose M here: the module will
+	  be called {{ module_name }}.

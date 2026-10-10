@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Userspace test client for /dev/{{ module_name }}.
+ *
+ * Exercises the full ioctl contract:
+ *   1. read default state
+ *   2. set a valid gain and read it back
+ *   3. reject an out-of-range gain with EINVAL
+ *   4. reset and verify the counter
+ *
+ * Exit code 0 = all checks passed, 1 = a check failed.
+ */
+
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+
+#include "{{ module_name }}.h"
+
+#define DEV_PATH "/dev/{{ module_name }}"
+
+static int expect_info(int fd, __u32 gain, __u32 resets, const char *when)
+{
+	struct {{ module_name }}_info info = {0};
+
+	if (ioctl(fd, {{ name_upper }}_IOCG_INFO, &info) < 0) {
+		perror("IOCG_INFO");
+		return 1;
+	}
+	if (info.gain != gain || info.resets != resets) {
+		fprintf(stderr,
+			"[%s] state mismatch: got {gain=%u, resets=%u}, "
+			"want {gain=%u, resets=%u}\n",
+			when, info.gain, info.resets, gain, resets);
+		return 1;
+	}
+	printf("[ok] %s: gain=%u resets=%u\n", when, info.gain, info.resets);
+	return 0;
+}
+
+int main(void)
+{
+	__u32 gain;
+	int fd;
+	int rc = 1;
+
+	fd = open(DEV_PATH, O_RDWR);
+	if (fd < 0) {
+		perror("open " DEV_PATH);
+		return 1;
+	}
+
+	if (expect_info(fd, {{ name_upper }}_GAIN_DEFAULT, 0, "default"))
+		goto out;
+
+	gain = 42;
+	if (ioctl(fd, {{ name_upper }}_IOCS_GAIN, &gain) < 0) {
+		perror("IOCS_GAIN(42)");
+		goto out;
+	}
+	if (expect_info(fd, 42, 0, "after set(42)"))
+		goto out;
+
+	gain = {{ name_upper }}_GAIN_MAX + 1;
+	if (ioctl(fd, {{ name_upper }}_IOCS_GAIN, &gain) != -1 ||
+	    errno != EINVAL) {
+		fprintf(stderr, "expected EINVAL for out-of-range gain\n");
+		goto out;
+	}
+	printf("[ok] out-of-range gain rejected with EINVAL\n");
+
+	if (ioctl(fd, {{ name_upper }}_IOC_RESET) < 0) {
+		perror("IOC_RESET");
+		goto out;
+	}
+	if (expect_info(fd, {{ name_upper }}_GAIN_DEFAULT, 1, "after reset"))
+		goto out;
+
+	if (ioctl(fd, _IO('x', 0x99)) != -1 || errno != ENOTTY) {
+		fprintf(stderr, "expected ENOTTY for foreign ioctl\n");
+		goto out;
+	}
+	printf("[ok] foreign ioctl rejected with ENOTTY\n");
+
+	printf("PASS: all {{ module_name }} checks succeeded\n");
+	rc = 0;
+out:
+	close(fd);
+	return rc;
+}

@@ -1,0 +1,8 @@
+# dkms.conf for {{ module_name }}
+PACKAGE_NAME="{{ module_name }}"
+PACKAGE_VERSION="1.0.0"
+BUILT_MODULE_NAME[0]="{{ module_name }}"
+DEST_MODULE_LOCATION[0]="/updates"
+AUTOINSTALL="yes"
+MAKE[0]="make KVER=${kernelver}"
+CLEAN="make clean"

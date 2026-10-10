@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree overlay for {{ module_name }}
+ *
+ * Target: QEMU 'virt' arm64 machine (for real boards, replace &{/soc} and
+ * the unit address with a free MMIO window on your SoC).
+ *
+ * Apply at runtime (needs CONFIG_OF_CONFIGFS):
+ *
+ *   dtc -O dtb -o {{ module_name }}-overlay.dtbo -@ {{ module_name }}-overlay.dts
+ *   sudo mkdir -p /sys/kernel/config/device-tree/overlays/{{ module_name }}
+ *   sudo cp {{ module_name }}-overlay.dtbo \
+ *       /sys/kernel/config/device-tree/overlays/{{ module_name }}/dtbo
+ */
+
+/dts-v1/;
+/plugin/;
+
+&{/soc} {
+	{{ module_name }}: {{ compat_board }}@9050000 {
+		compatible = "{{ compat }}";
+		reg = <0x00 0x09050000 0x00 0x1000>;
+		status = "okay";
+	};
+};

@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drvforge"
+version = "0.1.0"
+description = "Scaffolding tool for modern Linux kernel driver projects"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "GPL-2.0-only"
+authors = [
+    { name = "drvforge contributors" },
+]
+keywords = [
+    "linux",
+    "kernel",
+    "driver",
+    "scaffolding",
+    "embedded",
+    "iio",
+    "device-tree",
+    "dkms",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: C",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: System :: Hardware",
+    "Topic :: System :: Operating System Kernels :: Linux",
+]
+dependencies = [
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+drvforge = "drvforge.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/__GH_USER__/drvforge"
+Repository = "https://github.com/__GH_USER__/drvforge"
+Issues = "https://github.com/__GH_USER__/drvforge/issues"
+Changelog = "https://github.com/__GH_USER__/drvforge/blob/main/CHANGELOG.md"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+drvforge = ["templates/**/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]

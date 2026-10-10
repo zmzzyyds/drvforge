@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: lint & pytest
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Ruff
+        run: ruff check src tests
+
+      - name: Pytest
+        run: pytest -v
+
+  build-modules:
+    name: generated drivers build against real kernel
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install drvforge
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Install kernel headers and toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential "linux-headers-$(uname -r)"
+
+      - name: Generate every template
+        run: |
+          drvforge new demo-misc -t misc -c drvforge,demo-misc -d generated
+          drvforge new demo-cdev -t platform-cdev -c drvforge,demo-cdev -d generated
+          drvforge new demo-temp -t iio-temp -c drvforge,demo-temp -d generated
+
+      - name: Build kernel modules
+        run: |
+          make -C generated/demo_misc
+          make -C generated/demo_cdev
+          make -C generated/demo_temp
+
+      - name: Build userspace test clients
+        run: |
+          make -C generated/demo_misc tools/test
+          make -C generated/demo_cdev tools/test
+          make -C generated/demo_temp tools/test
+
+      - name: Smoke-load modules into the running kernel
+        run: |
+          set -eux
+          sudo modprobe industrialio || true
+          sudo modprobe regmap-i2c || true
+          for pair in demo_misc/demo_misc demo_cdev/demo_cdev demo_temp/demo_temp; do
+            dir="${pair%/*}"
+            mod="${pair#*/}"
+            sudo insmod "generated/${dir}/${mod}.ko"
+            lsmod | grep "${mod}"
+            sudo rmmod "${mod}"
+          done
+
+      - name: Check platform DT overlays compile
+        run: |
+          sudo apt-get install -y device-tree-compiler
+          # Path-based (&{/soc}) plugin overlays compile standalone; the I2C
+          # overlay references a board label (&i2c0) and needs the board DTB.
+          for f in generated/demo_misc/*-overlay.dts \
+                   generated/demo_cdev/*-overlay.dts; do
+            dtc -O dtb -@ -o /dev/null "$f"
+          done

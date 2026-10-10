@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree overlay for {{ module_name }}
+ *
+ * Target: QEMU 'virt' arm64 machine (for real boards, replace &{/soc} and
+ * the unit address with a free MMIO window on your SoC).
+ *
+ * Apply at runtime (needs CONFIG_OF_CONFIGFS):
+ *
+ *   dtc -O dtb -o {{ module_name }}-overlay.dtbo -@ {{ module_name }}-overlay.dts
+ *   sudo mkdir -p /sys/kernel/config/device-tree/overlays/{{ module_name }}
+ *   sudo cp {{ module_name }}-overlay.dtbo \
+ *       /sys/kernel/config/device-tree/overlays/{{ module_name }}/dtbo
+ *
+ * Or bake it into the QEMU DTB before boot:
+ *
+ *   dtc -I dtb -O dts qemu-virt.dtb -o qemu-virt.dts
+ *   fdtoverlay -o qemu-virt-overlay.dtb -i qemu-virt.dtb {{ module_name }}-overlay.dtbo
+ *   qemu-system-aarch64 ... -dtb qemu-virt-overlay.dtb
+ */
+
+/dts-v1/;
+/plugin/;
+
+&{/soc} {
+	{{ module_name }}: {{ compat_board }}@9040000 {
+		compatible = "{{ compat }}";
+		/* The example driver never touches MMIO; the window only
+		 * needs to be a non-overlapping address on the target SoC.
+		 */
+		reg = <0x00 0x09040000 0x00 0x1000>;
+		status = "okay";
+	};
+};
