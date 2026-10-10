@@ -6,7 +6,7 @@ good templates are the most valuable contribution.
 ## Getting started
 
 ```sh
-git clone https://github.com/__GH_USER__/drvforge.git
+git clone https://github.com/zmzzyyds/drvforge.git
 cd drvforge
 python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"

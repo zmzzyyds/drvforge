@@ -2,7 +2,7 @@
 
 **面向现代 Linux 内核驱动项目的脚手架工具。**
 
-[![CI](https://github.com/__GH_USER__/drvforge/actions/workflows/ci.yml/badge.svg)](https://github.com/__GH_USER__/drvforge/actions/workflows/ci.yml)
+[![CI](https://github.com/zmzzyyds/drvforge/actions/workflows/ci.yml/badge.svg)](https://github.com/zmzzyyds/drvforge/actions/workflows/ci.yml)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 
@@ -35,13 +35,13 @@ API 还没过时，手写 DKMS 和设备树 overlay，直到第一次 `insmod` �
 
 ```sh
 # 推荐：用 pipx 隔离安装
-pipx install git+https://github.com/__GH_USER__/drvforge.git
+pipx install git+https://github.com/zmzzyyds/drvforge.git
 
 # 或使用 pip
-pip install git+https://github.com/__GH_USER__/drvforge.git
+pip install git+https://github.com/zmzzyyds/drvforge.git
 
 # 或克隆后以开发模式安装
-git clone https://github.com/__GH_USER__/drvforge.git
+git clone https://github.com/zmzzyyds/drvforge.git
 cd drvforge
 pip install -e ".[dev]"
 ```

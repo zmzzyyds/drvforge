@@ -25,5 +25,5 @@ project follows [Semantic Versioning](https://semver.org/).
 - CI: pytest + ruff, plus a real-kernel build and smoke-load job for every
   generated driver
 
-[Unreleased]: https://github.com/__GH_USER__/drvforge/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/__GH_USER__/drvforge/releases/tag/v0.1.0
+[Unreleased]: https://github.com/zmzzyyds/drvforge/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/zmzzyyds/drvforge/releases/tag/v0.1.0

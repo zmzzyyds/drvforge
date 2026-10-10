@@ -82,7 +82,7 @@ dmesg | tail
 ## 4. 用 drvforge 生成第一个完整驱动
 
 ```sh
-pipx install git+https://github.com/__GH_USER__/drvforge.git
+pipx install git+https://github.com/zmzzyyds/drvforge.git
 drvforge new my-sensor -t misc -c acme,my-sensor
 cd my_sensor
 make

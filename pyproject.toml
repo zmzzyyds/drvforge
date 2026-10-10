@@ -47,10 +47,10 @@ dev = [
 drvforge = "drvforge.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/__GH_USER__/drvforge"
-Repository = "https://github.com/__GH_USER__/drvforge"
-Issues = "https://github.com/__GH_USER__/drvforge/issues"
-Changelog = "https://github.com/__GH_USER__/drvforge/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/zmzzyyds/drvforge"
+Repository = "https://github.com/zmzzyyds/drvforge"
+Issues = "https://github.com/zmzzyyds/drvforge/issues"
+Changelog = "https://github.com/zmzzyyds/drvforge/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
