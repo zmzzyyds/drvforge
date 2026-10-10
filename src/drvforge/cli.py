@@ -8,9 +8,9 @@ from pathlib import Path
 
 from . import __version__
 from .generator import (
+    TEMPLATES,
     GenerationError,
     ProjectConfig,
-    TEMPLATES,
     available_templates,
     check_toolchain,
     generate,

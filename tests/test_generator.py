@@ -3,9 +3,9 @@
 import pytest
 
 from drvforge.generator import (
+    TEMPLATES,
     GenerationError,
     ProjectConfig,
-    TEMPLATES,
     generate,
     normalize_module_name,
     parse_compatible,
