@@ -68,15 +68,26 @@ jobs:
       - name: Smoke-load modules into the running kernel
         run: |
           set -eux
-          sudo modprobe industrialio || true
-          sudo modprobe regmap-i2c || true
-          for pair in demo_misc/demo_misc demo_cdev/demo_cdev demo_temp/demo_temp; do
+          # Self-contained platform drivers must always load.
+          for pair in demo_misc/demo_misc demo_cdev/demo_cdev; do
             dir="${pair%/*}"
             mod="${pair#*/}"
             sudo insmod "generated/${dir}/${mod}.ko"
             lsmod | grep "${mod}"
             sudo rmmod "${mod}"
           done
+          # The IIO template additionally needs the IIO/regmap-I2C modules;
+          # cloud kernels may not ship them, in which case skip only this load.
+          if modinfo industrialio >/dev/null 2>&1 && \
+             modinfo regmap-i2c >/dev/null 2>&1; then
+            sudo modprobe industrialio
+            sudo modprobe regmap-i2c
+            sudo insmod generated/demo_temp/demo_temp.ko
+            lsmod | grep demo_temp
+            sudo rmmod demo_temp
+          else
+            echo "IIO stack unavailable on this kernel; skipping demo_temp load"
+          fi
 
       - name: Check platform DT overlays compile
         run: |

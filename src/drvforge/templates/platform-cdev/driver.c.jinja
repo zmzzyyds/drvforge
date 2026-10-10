@@ -115,7 +115,10 @@ static const struct file_operations {{ module_name }}_fops = {
 	.open = {{ module_name }}_open,
 	.unlocked_ioctl = {{ module_name }}_ioctl,
 	.compat_ioctl = {{ module_name }}_ioctl,
+	/* no_llseek() was removed in 6.12; a NULL llseek fails with ESPIPE. */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
 	.llseek = no_llseek,
+#endif
 };
 
 static int {{ module_name }}_probe(struct platform_device *pdev)
@@ -192,7 +195,12 @@ MODULE_DEVICE_TABLE(of, {{ module_name }}_of_match);
 
 static struct platform_driver {{ module_name }}_driver = {
 	.probe = {{ module_name }}_probe,
+	/* remove_new() was renamed remove() in 6.15. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+	.remove = {{ module_name }}_remove,
+#else
 	.remove_new = {{ module_name }}_remove,
+#endif
 	.driver = {
 		.name = "{{ module_name }}",
 		.of_match_table = {{ module_name }}_of_match,

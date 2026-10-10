@@ -26,6 +26,7 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
+#include <linux/version.h>
 
 #define {{ name_upper }}_BUF_SIZE	4096u
 
@@ -91,7 +92,10 @@ static const struct file_operations {{ module_name }}_fops = {
 	.owner = THIS_MODULE,
 	.read = {{ module_name }}_read,
 	.write = {{ module_name }}_write,
+	/* no_llseek() was removed in 6.12; a NULL llseek fails with ESPIPE. */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
 	.llseek = no_llseek,
+#endif
 };
 
 /*
@@ -150,8 +154,8 @@ static int {{ module_name }}_probe(struct platform_device *pdev)
 	if (ret)
 		return dev_err_probe(dev, ret, "failed to register misc device\n");
 
-	ret = device_create_file(&priv->miscdev.this_device,
-				 &dev_attr_message.attr);
+	ret = device_create_file(priv->miscdev.this_device,
+				 &dev_attr_message);
 	if (ret)
 		goto err_deregister;
 
@@ -170,7 +174,7 @@ static void {{ module_name }}_remove(struct platform_device *pdev)
 	struct {{ module_name }}_data *priv = platform_get_drvdata(pdev);
 
 	/* Remove sysfs before misc_deregister() destroys the backing device. */
-	device_remove_file(&priv->miscdev.this_device, &dev_attr_message.attr);
+	device_remove_file(priv->miscdev.this_device, &dev_attr_message);
 	misc_deregister(&priv->miscdev);
 }
 
@@ -182,7 +186,12 @@ MODULE_DEVICE_TABLE(of, {{ module_name }}_of_match);
 
 static struct platform_driver {{ module_name }}_driver = {
 	.probe = {{ module_name }}_probe,
+	/* remove_new() was renamed remove() in 6.15. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+	.remove = {{ module_name }}_remove,
+#else
 	.remove_new = {{ module_name }}_remove,
+#endif
 	.driver = {
 		.name = "{{ module_name }}",
 		.of_match_table = {{ module_name }}_of_match,
