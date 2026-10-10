@@ -85,8 +85,8 @@ static const struct iio_chan_spec {{ module_name }}_channels[] = {
 };
 
 static const struct regmap_config {{ module_name }}_regmap_config = {
-	.regbits = 8,
-	.valbits = 8,
+	.reg_bits = 8,
+	.val_bits = 8,
 	.max_register = {{ name_upper }}_REG_TEMP_LSB,
 };
 
