@@ -44,7 +44,10 @@ sudo rmmod {{ module_name }}
 Because the driver matches on `{{ compat }}`, a platform device with that
 compatible string must exist.
 
-### Option A — Device Tree overlay at runtime (CONFIG_OF_CONFIGFS)
+### Option A — configfs overlay at runtime
+
+Needs `CONFIG_OF_CONFIGFS`, which is **not in mainline** — it ships in heavier
+vendor trees such as Raspberry Pi's. On a stock kernel, use Option B.
 
 ```sh
 dtc -O dtb -o {{ module_name }}-overlay.dtbo -@ {{ module_name }}-overlay.dts
@@ -53,13 +56,18 @@ sudo cp {{ module_name }}-overlay.dtbo \
     /sys/kernel/config/device-tree/overlays/{{ module_name }}/dtbo
 ```
 
-### Option B — bake into the QEMU virt DTB
+### Option B — merge into the QEMU virt DTB before boot
+
+The overlay carries its own `reg`, so merge it into a tree dumped with exactly
+the machine parameters you are about to boot with: `-cpu`, `-m` and `-smp` are
+baked into the tree.
 
 ```sh
-# extract and decompile the DTB shipped with your QEMU / distro, then:
-fdtoverlay -o virt-overlay.dtb -i virt.dtb {{ module_name }}-overlay.dtbo
-qemu-system-aarch64 -M virt -cpu cortex-a57 -m 512 \
-    -kernel Image -append "console=ttyAMA0" -dtb virt-overlay.dtb
+qemu-system-aarch64 -M virt,dumpdtb=virt.dtb -cpu cortex-a57 -m 512 -smp 2
+dtc -O dtb -o {{ module_name }}-overlay.dtbo -@ {{ module_name }}-overlay.dts
+fdtoverlay -i virt.dtb -o virt-{{ module_name }}.dtb {{ module_name }}-overlay.dtbo
+qemu-system-aarch64 -M virt -cpu cortex-a57 -m 512 -smp 2 \
+    -kernel Image -append "console=ttyAMA0" -dtb virt-{{ module_name }}.dtb
 ```
 
 After binding, `dmesg` shows:

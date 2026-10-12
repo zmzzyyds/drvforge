@@ -34,14 +34,34 @@ make test   # build, insmod, run the ioctl test client, rmmod
 
 ## Binding the driver
 
-The driver matches on `{{ compat }}`; create the platform device with the
-provided overlay:
+The driver matches on `{{ compat }}`, so a platform device carrying that
+compatible string must exist before it will probe. The overlay in this
+directory creates one; there are two ways to apply it.
+
+### Option A — configfs overlay at runtime
+
+Needs `CONFIG_OF_CONFIGFS`, which is **not in mainline** — it ships in heavier
+vendor trees such as Raspberry Pi's. On a stock kernel, use Option B.
 
 ```sh
 dtc -O dtb -o {{ module_name }}-overlay.dtbo -@ {{ module_name }}-overlay.dts
 sudo mkdir -p /sys/kernel/config/device-tree/overlays/{{ module_name }}
 sudo cp {{ module_name }}-overlay.dtbo \
     /sys/kernel/config/device-tree/overlays/{{ module_name }}/dtbo
+```
+
+### Option B — merge into the QEMU virt DTB before boot
+
+The overlay carries its own `reg`, so merge it into a tree dumped with exactly
+the machine parameters you are about to boot with: `-cpu`, `-m` and `-smp` are
+baked into the tree.
+
+```sh
+qemu-system-aarch64 -M virt,dumpdtb=virt.dtb -cpu cortex-a57 -m 512 -smp 2
+dtc -O dtb -o {{ module_name }}-overlay.dtbo -@ {{ module_name }}-overlay.dts
+fdtoverlay -i virt.dtb -o virt-{{ module_name }}.dtb {{ module_name }}-overlay.dtbo
+qemu-system-aarch64 -M virt -cpu cortex-a57 -m 512 -smp 2 \
+    -kernel Image -append "console=ttyAMA0" -dtb virt-{{ module_name }}.dtb
 ```
 
 After binding:

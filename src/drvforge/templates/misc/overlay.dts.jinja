@@ -2,33 +2,40 @@
 /*
  * Device Tree overlay for {{ module_name }}
  *
- * Target: QEMU 'virt' arm64 machine (for real boards, replace &{/soc} and
- * the unit address with a free MMIO window on your SoC).
+ * Target: QEMU 'virt' arm64 machine. The virt machine keeps every device
+ * directly under the root node, so this attaches to &{/}.
  *
- * Apply at runtime (needs CONFIG_OF_CONFIGFS):
+ * For a real SoC, retarget the fragment at the bus your device sits on (most
+ * SoCs put one under &{/soc}), move the unit address into a free MMIO window,
+ * and set #address-cells / #size-cells to match that bus.
  *
+ * Bake it into the DTB before boot. Dump the tree with the same -cpu/-m/-smp
+ * you are going to boot with: those values are baked into the tree.
+ *
+ *   qemu-system-aarch64 -M virt,dumpdtb=virt.dtb -cpu cortex-a57 -m 512 -smp 2
  *   dtc -O dtb -o {{ module_name }}-overlay.dtbo -@ {{ module_name }}-overlay.dts
- *   sudo mkdir -p /sys/kernel/config/device-tree/overlays/{{ module_name }}
- *   sudo cp {{ module_name }}-overlay.dtbo \
- *       /sys/kernel/config/device-tree/overlays/{{ module_name }}/dtbo
+ *   fdtoverlay -i virt.dtb -o virt-{{ module_name }}.dtb {{ module_name }}-overlay.dtbo
+ *   qemu-system-aarch64 -M virt -cpu cortex-a57 -m 512 -smp 2 \
+ *       -kernel Image -append "console=ttyAMA0" -dtb virt-{{ module_name }}.dtb
  *
- * Or bake it into the QEMU DTB before boot:
- *
- *   dtc -I dtb -O dts qemu-virt.dtb -o qemu-virt.dts
- *   fdtoverlay -o qemu-virt-overlay.dtb -i qemu-virt.dtb {{ module_name }}-overlay.dtbo
- *   qemu-system-aarch64 ... -dtb qemu-virt-overlay.dtb
+ * Applying it at runtime through configfs needs CONFIG_OF_CONFIGFS, which is
+ * not in mainline -- it is carried by heavier vendor trees such as Raspberry
+ * Pi's. On a stock kernel, merge it into the DTB instead, as above.
  */
 
 /dts-v1/;
 /plugin/;
 
-&{/soc} {
+&{/} {
+	#address-cells = <0x02>;
+	#size-cells = <0x01>;
+
 	{{ module_name }}: {{ compat_board }}@9040000 {
 		compatible = "{{ compat }}";
 		/* The example driver never touches MMIO; the window only
 		 * needs to be a non-overlapping address on the target SoC.
 		 */
-		reg = <0x00 0x09040000 0x00 0x1000>;
+		reg = <0x00 0x09040000 0x1000>;
 		status = "okay";
 	};
 };

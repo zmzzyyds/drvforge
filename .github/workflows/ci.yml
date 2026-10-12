@@ -96,8 +96,11 @@ jobs:
       - name: Check platform DT overlays compile
         run: |
           sudo apt-get install -y device-tree-compiler
-          # Path-based (&{/soc}) plugin overlays compile standalone; the I2C
-          # overlay references a board label (&i2c0) and needs the board DTB.
+          # Compile-only check: dtc resolves an overlay's target path at merge
+          # time, so this proves the overlay is syntactically valid but not
+          # that it applies to any particular tree.
+          # The i2c overlay is excluded: it references a board label (&i2c0)
+          # and needs a board DTB to compile against.
           for f in generated/demo_misc/*-overlay.dts \
                    generated/demo_cdev/*-overlay.dts; do
             dtc -O dtb -@ -o /dev/null "$f"

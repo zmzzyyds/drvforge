@@ -11,6 +11,18 @@ project follows [Semantic Versioning](https://semver.org/).
 - `drvforge check` running checkpatch.pl/sparse (planned)
 - One-command QEMU arm64 try-out script (planned)
 
+### Fixed
+- The `misc` and `platform-cdev` overlays could not be applied to the QEMU
+  arm64 `virt` machine they claimed to target: they attached to `&{/soc}`,
+  which the virt machine does not have, and their `reg` carried one cell too
+  many for the root bus (`#address-cells = 2`, `#size-cells = 1`). Both now
+  attach to `&{/}`, declare the cell counts, and merge cleanly.
+- Generated READMEs no longer present the configfs overlay route as the only
+  way to bind at runtime — `CONFIG_OF_CONFIGFS` is not in mainline. The QEMU
+  path now shows the `-M virt,dumpdtb=` step needed to obtain the tree to
+  merge into, and notes that it must be dumped with the same `-cpu`/`-m`/`-smp`
+  used to boot.
+
 ## [0.1.0] - 2026-10-10
 
 ### Added
