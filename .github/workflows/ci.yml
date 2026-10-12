@@ -93,15 +93,27 @@ jobs:
             echo "IIO stack unavailable on this kernel; skipping demo_temp load"
           fi
 
-      - name: Check platform DT overlays compile
+      - name: Check platform DT overlays against a real QEMU virt tree
         run: |
-          sudo apt-get install -y device-tree-compiler
-          # Compile-only check: dtc resolves an overlay's target path at merge
-          # time, so this proves the overlay is syntactically valid but not
-          # that it applies to any particular tree.
-          # The i2c overlay is excluded: it references a board label (&i2c0)
-          # and needs a board DTB to compile against.
+          sudo apt-get install -y device-tree-compiler qemu-system-arm
+          # Compiling an overlay proves only that it is syntactically valid:
+          # dtc resolves the fragment's target path at merge time, so a target
+          # the tree does not have (a &{/soc} node, say) still exits 0. Dump
+          # the tree QEMU would boot with, merge each overlay into it, and
+          # check a node actually landed.
+          # The i2c overlay is skipped: it references a board label (&i2c0) and
+          # needs a board DTB rather than the generic virt tree.
+          qemu-system-aarch64 -M virt,dumpdtb=virt.dtb \
+            -cpu cortex-a57 -m 512 -smp 2 -display none
+          # Count only real nodes. dtc -@ also emits a __symbols__ node, and
+          # counting that would let the check pass without a device node ever
+          # landing in the tree.
+          count_nodes() { fdtget -l "$1" / | grep -vc '^__'; }
+          n_before=$(count_nodes virt.dtb)
           for f in generated/demo_misc/*-overlay.dts \
                    generated/demo_cdev/*-overlay.dts; do
-            dtc -O dtb -@ -o /dev/null "$f"
+            dtc -O dtb -@ -o overlay.dtbo "$f"
+            fdtoverlay -i virt.dtb -o merged.dtb overlay.dtbo
+            n_after=$(count_nodes merged.dtb)
+            test "$n_after" -gt "$n_before"
           done
