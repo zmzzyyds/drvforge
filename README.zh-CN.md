@@ -99,12 +99,23 @@ my_sensor/
 v0.1.0：3 个模板、CLI 稳定、CI 对每个生成驱动做真实内核编译。已可用于
 实际工作，模板覆盖面将持续扩大。
 
+CI 会编译生成的驱动，并对自包含的那些做冒烟加载。它**不会**运行它们的
+`tools/test` 程序，而且在云端 runner 上也做不到：平台驱动只绑定设备树节点，
+runner 上没有节点，于是 `insmod` 成功而 `probe()` 从未执行——驱动的代码一行都没跑。
+要真正运行生成的驱动需要一个客户机，由
+[drv-lab](https://github.com/zmzzyyds/drv-lab) 提供：
+
+```console
+$ drvlab run ./my_sensor
+```
+
 ## 路线图
 
 - [ ] 更多驱动模板：`hwmon`、`leds`、`input`、`pwm`、`rtc`、`watchdog`、
       `net`、USB、DRM 小驱动
 - [ ] `drvforge check`：对生成代码运行 `checkpatch.pl` 与 sparse
-- [ ] `scripts/qemu-try.sh`：一条命令启动 QEMU arm64、加载 overlay、跑测试
+- [x] 一条命令启动 QEMU arm64、加载 overlay、跑测试 —— 已作为独立项目交付：
+      [drv-lab](https://github.com/zmzzyyds/drv-lab)
 - [ ] 随 overlay 一起生成 YAML 设备树 binding 文档
 - [ ] CI 增加多 LTS 内核版本兼容矩阵
 - [ ] 交互模式（`drvforge new` 逐步询问寄存器、中断、sysfs 属性等）

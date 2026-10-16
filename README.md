@@ -100,12 +100,24 @@ shared UAPI header included by both the driver and the userspace client.
 v0.1.0 — three templates, stable CLI, CI compiling every generated driver.
 The tooling is usable for real work; expect template coverage to grow.
 
+CI compiles the generated drivers and smoke-loads the self-contained ones. It
+does **not** run their `tools/test` programs, and on a cloud runner it cannot: a
+platform driver binds only to a device tree node, a runner has none, so `insmod`
+succeeds while `probe()` never runs and the driver's code is never executed.
+Actually running a generated driver takes a guest, which
+[drv-lab](https://github.com/zmzzyyds/drv-lab) provides:
+
+```console
+$ drvlab run ./my_sensor
+```
+
 ## Roadmap
 
 - [ ] More driver templates: `hwmon`, `leds`, `input`, `pwm`, `rtc`,
       `watchdog`, `net`, USB, DRM mini-driver
 - [ ] `drvforge check` — run `checkpatch.pl` and sparse on the generated code
-- [ ] `scripts/qemu-try.sh` — one-command QEMU arm64 boot + overlay + test
+- [x] One-command QEMU arm64 boot + overlay + test — delivered as its own
+      project, [drv-lab](https://github.com/zmzzyyds/drv-lab)
 - [ ] YAML devicetree binding generation alongside overlays
 - [ ] Kernel-version compatibility matrix in CI (multiple LTS kernels)
 - [ ] Interactive mode (`drvforge new` prompting for resources, IRQs,

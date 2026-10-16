@@ -67,8 +67,20 @@ int main(void)
 	}
 	printf("[ok] wrote %zd bytes ('%s')\n", n, PAYLOAD);
 
-	if (lseek(fd, 0, SEEK_SET) < 0) {
-		perror("lseek");
+	/*
+	 * Rewind by reopening rather than by seeking. The driver registers this as
+	 * a non-seekable character device -- lseek() returns ESPIPE, on purpose,
+	 * because a register that replaces its whole contents on every write has no
+	 * meaningful file offset to seek to. Its write() still advances the offset,
+	 * so reading back needs a fresh descriptor.
+	 *
+	 * Note that pread() would not help here either: it needs a seekable
+	 * descriptor too.
+	 */
+	close(fd);
+	fd = open(DEV_PATH, O_RDWR);
+	if (fd < 0) {
+		perror("reopen " DEV_PATH);
 		goto out;
 	}
 
